@@ -1,64 +1,103 @@
-
-
-
 import { useState } from 'react';
-import {storage } from '../../services/firebase';
+import {storage} from '../../services/firebase';
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
   
 function Assignments() {
-  
-  const [doc, setDoc] = useState('');
-  const [Url, setUrl] = useState('');
-  const [data, setData] =useState('');
-  
-  const upload = () => {
-    if (doc == null)
-      return;
-    setUrl("Getting Download Link...")
-  
-    // Sending File to Firebase Storage
-    storage.ref(`/docs/${doc.name}`).put(doc)
-      .on("state_changed", alert("success"), alert, () => {
-  
-        // Getting Download Link
-        storage.ref("docs").child(doc.name).getDownloadURL()
-          .then((url) => {
-            setUrl(url);
-          })
+    const [file, setFile] = useState("");
+ 
+    // progress
+    const [percent, setPercent] = useState(0);
+    const [allDocs,setDocs] =useState([]);
+ 
+    // Handle file upload event and update state
+    function handleChange(event) {
+        setFile(event.target.files[0]);
+    }
+ 
+    const handleUpload = () => {
+        if (!file) {
+            alert("Please upload an assignment first!");
+        }
+ 
+        const storageRef = ref(storage, `/files/${file.name}`);
+ 
+        // progress can be paused and resumed. It also exposes progress updates.
+        // Receives the storage reference and the file to upload.
+        const uploadTask = uploadBytesResumable(storageRef, file);
+ 
+        uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+                const percent = Math.round(
+                    (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+                );
+ 
+                // update progress
+                setPercent(percent);
+            },
+            (err) => console.log(err),
+            () => {
+                // download url
+                getDownloadURL(uploadTask.snapshot.ref).then((url) => {
+                    console.log(url);
+                });
+            }
+        );
+    };
+  const getFromFirebase = () => {
+    //1.
+    let storageRef = storage.ref();
+    //2.
+    storageRef.listAll().then(function (res) {
+        //3.
+        res.items.forEach((docRef) => {
+          docRef.getDownloadURL().then((url) => {
+              //4.
+              setDocs((allDocs) => [...allDocs, url]);
+          });
+        });
+      })
+      .catch(function (error) {
+        console.log(error);
       });
-  }
+  };
 
-  // List All Files
-  const listItem = () => {
-    storage.ref().child('docs/').listAll()
-      .then(res => {
-        res.items.forEach((item) => {
-          setData(arr => [...arr, item.name]);
-        })
+  const deleteFromFirebase = (url) => {
+    //1.
+    let pictureRef = storage.refFromURL(url);
+   //2.
+    pictureRef.delete()
+      .then(() => {
+        //3.
+        setDocs(allDocs.filter((doc) => doc !== url));
+        alert("Pdf is deleted successfully!");
       })
-      .catch(err => {
-        alert(err.message);
-      })
-  }
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+
+ 
+    return (
+        <div>
+            <input type="file" onChange={handleChange} accept="/doc/*" />
+            <button onClick={handleUpload}>Upload to Firebase</button>
+            <p>{percent} "% done"</p>
+             {allDocs.map((doc)=>{
+                
+                    <div key={doc} className="doc">
+                        <doc src={doc} alt="" />
+                        <button onClick={() => deleteFromFirebase(doc)}>Delete</button>
+                    </div>
+                
+             })}
+        </div>
+        
+         
+    );
   
-  return (
-    <div className="App" style={{ marginTop: 250 }}>
-      <center>
-        <input type="file" 
-        onChange={(e) => { setDoc(e.target.files[0]) }} />
-        <button onClick={upload}>Upload</button>
-        <br />
-        <p><a href={Url}>{Url}</a></p>
-        <br /><br /><br /><br /><br /><br />
-        <button onClick={listItem}>List Item</button>
-        <br /><br />
-        {
-          data.map((val) => (
-            <h2>{val}</h2>
-          ))
-}
-      </center>
-    </div>
-  );
-}
   
-export { Assignments};
+  
+}  
+export {Assignments};
