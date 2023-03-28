@@ -28,7 +28,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth();
-export const storage = getStorage(app);
+const storage = getStorage(app);
 
 
 
@@ -80,4 +80,4 @@ function getMessages(roomId, callback) {
     );
 }
 
-export { db,auth,signOut,onAuthStateChanged,loginWithGoogle, sendMessage, getMessages };
+export { db,auth, storage,signOut,onAuthStateChanged,loginWithGoogle, sendMessage, getMessages };
