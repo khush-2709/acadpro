@@ -12,6 +12,9 @@ function Landing() {
     const navigateToAssignments = () => {
         navigate('/assignments');
     };
+    const navigateLogout = () => {
+        navigate('/logout');
+    };
     return (
         <>
             <button onClick={navigateToTodo}>TodoList</button>
@@ -24,6 +27,7 @@ function Landing() {
                     </li>
                 ))}
             </ul>
+            <button onClick={navigateLogout}> Logout </button>
         </>
     );
     
